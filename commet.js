@@ -1,38 +1,34 @@
-// Create web server with Node.js
-// Run with: node commet.js
+// Create web server
+const express = require('express');
+const app = express();
 
-// Load modules
-var http = require('http');
-var url = require('url');
-var fs = require('fs');
+// Set view engine
+app.set('view engine', 'ejs');
 
-// Create server
-var server = http.createServer(function (req, res) {
-  // Get URL path
-  var path = url.parse(req.url).pathname;
-  // If path is /, send index.html
-  if (path == '/') {
-    res.writeHead(200, {'Content-Type': 'text/html'});
-    res.write(fs.readFileSync('./index.html'));
-    res.end();
-  // If path is /comment, send comment.json
-  } else if (path == '/comment') {
-    res.writeHead(200, {'Content-Type': 'text/json'});
-    res.write(fs.readFileSync('./comment.json'));
-    res.end();
-  // If path is /post, receive comment and save to comment.json
-  } else if (path == '/post') {
-    req.on('data', function (data) {
-      var comment = JSON.parse(data);
-      var comments = JSON.parse(fs.readFileSync('./comment.json'));
-      comments.push(comment);
-      fs.writeFileSync('./comment.json', JSON.stringify(comments));
-    });
-    res.writeHead(200, {'Content-Type': 'text/json'});
-    res.end();
+// Set static file
+app.use(express.static('public'));
+
+// Set body-parser
+const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Set mongodb
+const MongoClient = require('mongodb').MongoClient;
+const url = 'mongodb://localhost:27017';
+const dbName = 'comet';
+const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
+let db, collection;
+client.connect(function (err) {
+  if (err) {
+    return console.log(err);
   }
+  console.log('MongoDB connected successfully');
+  db = client.db(dbName);
+  collection = db.collection('comments');
 });
 
-// Listen on port 3000
-server.listen(3000);
-console.log('Server running at http://localhost:3000/');
+// Set server
+app.listen(8080, function () {
+  console.log('Server running at http://localhost:8080');
+}
+)
